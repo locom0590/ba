@@ -1,46 +1,46 @@
-// HTML elementlerini seç
 const videoElement = document.getElementsByClassName('input_video')[0];
 const canvasElement = document.getElementsByClassName('output_canvas')[0];
 const canvasCtx = canvasElement.getContext('2d');
 const scoreElement = document.getElementById('score');
 
-// Oyun değişkenleri
 let score = 0;
 let balloons = [];
-const balloonRadius = 40; // Biraz daha büyük balonlar
-const balloonCount = 6;
+const balloonRadius = 45; // Telefon ekranında rahat dokunabilmek için ideal boyut
+const maxBalloons = 5;
 
 // Ekran boyutunu ayarla
-canvasElement.width = window.innerWidth;
-canvasElement.height = window.innerHeight;
+function resizeCanvas() {
+    canvasElement.width = window.innerWidth;
+    canvasElement.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
-// 1. Balon Oluşturma Fonksiyonu
+// Balon Oluşturucu
 function createBalloon() {
+    if (balloons.length >= maxBalloons) return;
     balloons.push({
         x: Math.random() * (canvasElement.width - balloonRadius * 2) + balloonRadius,
         y: canvasElement.height + balloonRadius * 2,
-        speed: Math.random() * 2 + 0.5, // Daha yavaş uçan balonlar
-        color: `hsl(${Math.random() * 360}, 70%, 60%)`
+        speed: Math.random() * 1.5 + 1, // Masada takip edebilmek için ideal hız
+        color: `hsl(${Math.random() * 360}, 80%, 60%)`
     });
 }
 
-// Başlangıçta balonları oluştur
-for (let i = 0; i < balloonCount; i++) {
-    setTimeout(createBalloon, i * 1500);
+// İlk balonları zamanla bırak
+for (let i = 0; i < maxBalloons; i++) {
+    setTimeout(createBalloon, i * 1200);
 }
 
-// 2. Çarpışma Kontrolü (El balona değdi mi?)
-function checkCollision(handX, handY) {
+// Patlatma Kontrolü (Mesafe Bazlı)
+function checkCollision(fingerX, fingerY) {
     for (let i = balloons.length - 1; i >= 0; i--) {
         const b = balloons[i];
-        
-        // Mesafe hesaplama
-        const dx = handX - b.x;
-        const dy = handY - b.y;
+        const dx = fingerX - b.x;
+        const dy = fingerY - b.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        // Eğer el balona yarıçapından daha yakınsa
-        if (distance < balloonRadius) {
+
+        if (distance < balloonRadius + 15) { // 15 piksel esneklik payı
             balloons.splice(i, 1);
             score++;
             scoreElement.innerText = score;
@@ -49,55 +49,46 @@ function checkCollision(handX, handY) {
     }
 }
 
-// 3. MediaPipe El Takibi Sonuçlarını İşleme (GÜNCELLENDİ)
+// Yapay Zeka Sonuç Döngüsü
 function onResults(results) {
-    // Canvas'ı temizle (Sadece balonları çizmek için)
-    canvasCtx.save();
+    // Sadece balonları çizmek için ekranı temizle (Arka plan şeffaf kalır, kamera görünür)
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    
-    // GÖRÜNÜRLÜK: Artık `results.image`'i (kamerayı) canvas'a çizmiyoruz.
-    // Çünkü `video` elementi arka planda (style.css z-index: 1) zaten canlı yayını gösteriyor.
-    // Gözünüz canlı kamera görüntüsündeki elinizi görüyor.
 
-    // Kamerada el var mı?
+    // Eğer kamera kadrajında el varsa koordinatları hesapla
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         for (const landmarks of results.multiHandLandmarks) {
+            // İşaret Parmağı Ucu (Landmark 8)
+            const indexFinger = landmarks[8];
             
-            // Sadece İşaret Parmağı Ucunu (Tip - Index 8) takip et
-            const indexFingerTip = landmarks[8];
-            
-            // Koordinatları canvas boyutuna çevir (Ayna efekti kapalı!)
-            const fingerX = indexFingerTip.x * canvasElement.width;
-            const fingerY = indexFingerTip.y * canvasElement.height;
+            // Arka kamera normal açısında koordinat eşleme
+            const fingerX = indexFinger.x * canvasElement.width;
+            const fingerY = indexFinger.y * canvasElement.height;
 
-            // --- BURASI DEĞİŞTİ ---
-            // Önceki kodda buraya kırmızı bir nokta çiziyorduk.
-            // Şimdi çizmiyoruz. Eliniz canlı kamera görüntüsünde doğal olarak görünüyor.
-            // Sadece elinizin nerede olduğunu hesaplayıp çarpışmayı kontrol ediyoruz.
-            
+            // Arka planda elin buraya değip değmediğini kontrol et (Ekrana hiçbir şey çizme)
             checkCollision(fingerX, fingerY);
         }
     }
-    
-    canvasCtx.restore(); // Çizimi ayna efektinden çıkar (zaten kapalı ama güvenli)
-    
-    // 4. Sadece Balonları Hareket Ettir ve Çiz (Arka plan şeffaf kalıyor)
+
+    // Balonları Çiz ve Yukarı Kaydır
     for (let i = balloons.length - 1; i >= 0; i--) {
         const b = balloons[i];
         b.y -= b.speed;
 
+        // Balon gövdesi
         canvasCtx.fillStyle = b.color;
         canvasCtx.beginPath();
         canvasCtx.arc(b.x, b.y, balloonRadius, 0, 2 * Math.PI);
         canvasCtx.fill();
-        
-        canvasCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; // Şeffaf ip
-        canvasCtx.lineWidth = 1;
+
+        // Balon ipi
+        canvasCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        canvasCtx.lineWidth = 2;
         canvasCtx.beginPath();
         canvasCtx.moveTo(b.x, b.y + balloonRadius);
-        canvasCtx.lineTo(b.x, b.y + balloonRadius + 25);
+        canvasCtx.lineTo(b.x, b.y + balloonRadius + 30);
         canvasCtx.stroke();
 
+        // Ekrandan uçup giden balonları sil, yenisini yap
         if (b.y < -balloonRadius * 2) {
             balloons.splice(i, 1);
             createBalloon();
@@ -105,28 +96,26 @@ function onResults(results) {
     }
 }
 
-// 5. MediaPipe Hands Ayarları
-const hands = new Hands({locateFile: (file) => {
-    return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-}});
+// MediaPipe Kurulumu
+const hands = new Hands({
+    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424515/${file}`
+});
 
 hands.setOptions({
     maxNumHands: 1,
-    modelComplexity: 0,
-    minDetectionConfidence: 0.6, // Biraz daha hassas el bulma
-    minTrackingConfidence: 0.6
+    modelComplexity: 0, // En hızlı mobil mod
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5
 });
 hands.onResults(onResults);
 
-// 6. Kamerayı Başlat (Arka Kamera)
+// Arka Kamerayı Başlat
 const camera = new Camera(videoElement, {
     onFrame: async () => {
-        // MediaPipe'a görüntüyü gönder (Takip için)
-        // Ama MediaPipe'ın çizim yapmasına izin vermiyoruz (onResults içinde)
-        await hands.send({image: videoElement});
+        await hands.send({ image: videoElement });
     },
-    width: window.innerWidth,
-    height: window.innerHeight,
-    facingMode: 'environment' // Arka Kamera
+    width: 640,
+    height: 480,
+    facingMode: 'environment' // Kesinlikle Arka Kamera
 });
 camera.start();
