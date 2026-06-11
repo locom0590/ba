@@ -1,0 +1,51 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000;
+}
+
+.container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Kamerayı arka plana tam ekran yap */
+.input_video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+    transform: scaleX(-1); /* Ayna efekti (2D için daha rahat) */
+}
+
+/* Oyun alanını kameranın üzerine yerleştir */
+.output_canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* Skor tablosu */
+#ui-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px 20px;
+    font-family: Arial, sans-serif;
+    font-size: 24px;
+    border-radius: 10px;
+    pointer-events: none; /* Skora dokunulamasın */
+}
