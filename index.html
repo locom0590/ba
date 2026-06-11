@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Balon Patlatma - AR Prototip</title>
+    <title>AR Balon Patlatma</title>
     <link rel="stylesheet" href="style.css">
     
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424515/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -17,9 +16,7 @@
         
         <canvas class="output_canvas"></canvas>
         
-        <div id="ui-container">
-            Skor: <span id="score">0</span>
-        </div>
+        <div id="ui-container">Skor: <span id="score">0</span></div>
     </div>
 
     <script src="script.js"></script>
